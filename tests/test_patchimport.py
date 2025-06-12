@@ -17,6 +17,7 @@ class MyClass:
         return "original method"
 """
 
+
 @pytest.fixture
 def dummy_module_path():
     """
@@ -26,13 +27,13 @@ def dummy_module_path():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Add the temporary directory to Python's path so it can be found
         sys.path.insert(0, tmpdir)
-        
+
         module_path = Path(tmpdir) / "dummy_module.py"
         module_path.write_text(DUMMY_MODULE_CONTENT)
-        
+
         # Yield the path to the tests
         yield module_path
-        
+
         # Teardown: Clean up sys.path and unload the module
         sys.path.pop(0)
         if "dummy_module" in sys.modules:
@@ -43,17 +44,40 @@ def test_code_insertion(dummy_module_path, capteesys):
     """
     Tests if `patchimport` can correctly insert code into a module.
     """
-    patch_code = 'NEW_VARIABLE = 42'
+    patch_code = "NEW_VARIABLE = 42"
     patchimport(line="dummy_module 2", cell=patch_code)
 
     import dummy_module
 
-    assert hasattr(dummy_module, 'NEW_VARIABLE')
+    assert hasattr(dummy_module, "NEW_VARIABLE")
     assert dummy_module.NEW_VARIABLE == 42
     assert dummy_module.CONSTANT == "original"
     assert dummy_module.original_function() == "original result"
     out, _ = capteesys.readouterr()
-    assert "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!" in out
+    assert (
+        "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!"
+        in out
+    )
+
+
+def test_code_append(dummy_module_path, capteesys):
+    """
+    Tests if `patchimport` can correctly insert code into a module.
+    """
+    patch_code = "NEW_VARIABLE = 42"
+    patchimport(line="dummy_module 10", cell=patch_code)
+
+    import dummy_module
+
+    assert hasattr(dummy_module, "NEW_VARIABLE")
+    assert dummy_module.NEW_VARIABLE == 42
+    assert dummy_module.CONSTANT == "original"
+    assert dummy_module.original_function() == "original result"
+    out, _ = capteesys.readouterr()
+    assert (
+        "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!"
+        in out
+    )
 
 
 def test_code_replacement(dummy_module_path, capteesys):
@@ -62,14 +86,17 @@ def test_code_replacement(dummy_module_path, capteesys):
     """
     patch_code = '    return "patched result"'
     patchimport(line="dummy_module 5 6", cell=patch_code)
-        
+
     import dummy_module
-    
+
     assert dummy_module.original_function() == "patched result"
     assert dummy_module.CONSTANT == "original"
     assert dummy_module.MyClass().method() == "original method"
     out, _ = capteesys.readouterr()
-    assert "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!" in out
+    assert (
+        "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!"
+        in out
+    )
 
 
 def test_parse_args():
@@ -95,13 +122,17 @@ def test_patcher_logic():
     """
     source = "line1\nline2\nline3\nline4"
     patch_text = "inserted_line_A\ninserted_line_B"
-    
+
     # Test insertion
-    new_source = patcher(source, start_line=1, end_line=1, patch=patch_text, log_function=None)
+    new_source = patcher(
+        source, start_line=1, end_line=1, patch=patch_text, log_function=None
+    )
     assert new_source == "line1\ninserted_line_A\ninserted_line_B\nline2\nline3\nline4"
-    
+
     # Test replacement
-    new_source_2 = patcher(source, start_line=1, end_line=3, patch=patch_text, log_function=None)
+    new_source_2 = patcher(
+        source, start_line=1, end_line=3, patch=patch_text, log_function=None
+    )
     assert new_source_2 == "line1\ninserted_line_A\ninserted_line_B\nline4"
 
 
