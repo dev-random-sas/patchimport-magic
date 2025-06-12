@@ -66,6 +66,7 @@ def patcher(source, start_line, end_line, patch, log_function=print):
     lines = source.splitlines()
     patch_lines = patch.splitlines()
     # TODO: Add support for autoindent
+    # TODO: Ensure we don't fall off the end. See how to abort the process in that case.
     new_lines = [*(lines[:start_line]), *patch_lines, *(lines[end_line:])]
     new_src = "\n".join(new_lines)
 
