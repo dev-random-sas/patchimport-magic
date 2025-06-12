@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "patchimport-magic"
+version = "0.1.0"
+authors = [{ name="Luigi Finetti", email="luigi@finetti.com.ar" }]
+readme = "README.md"
+license = "BSD-3-Clause"
+description = "IPython magic to patch modules before you import them"
+keywords = [
+    "ipython",
+    "jupyter",
+    "magic",
+    "import",
+    "patch",
+    "monkeypatch",
+    "hook",
+    "testing",
+    "benchmarking",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: IPython",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "ipython>=6.0",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/dev-random-sas/patchimport-magic/issues"
+"Source Code" = "https://github.com/dev-random-sas/patchimport-magic"
