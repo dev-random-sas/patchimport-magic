@@ -13,7 +13,7 @@ def modify_and_import(module_name, package, modification_func):
     spec = util.find_spec(module_name, package)
     source = spec.loader.get_source(module_name)
     new_source = modification_func(source)
-    spec.origin = None
+    spec.origin = None # TODO: Make Jupyter stop finding the (now wrong) code on ??
     spec.cached = None
     module = util.module_from_spec(spec)
     codeobj = compile(new_source, f"<patched {module.__spec__.origin}>", "exec")
@@ -65,6 +65,7 @@ def parse_args(line: str) -> PatchArgs:
 def patcher(source, start_line, end_line, patch, log_function=print):
     lines = source.splitlines()
     patch_lines = patch.splitlines()
+    # TODO: Add support for autoindent
     new_lines = [*(lines[:start_line]), *patch_lines, *(lines[end_line:])]
     new_src = "\n".join(new_lines)
 
@@ -143,8 +144,11 @@ def patchimport(line, cell):
     )
     return
 
+# TODO: Add support for diffs
+
 
 def load_ipython_extension(ipython):
+    # TODO: Should we require load_ext, or should we auto register ourselves?
     register_cell_magic(patchimport)
 
 
