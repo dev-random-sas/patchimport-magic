@@ -3,6 +3,8 @@ from importlib import util
 from functools import partial
 import argparse
 import shlex
+from typing import NamedTuple
+
 from IPython.core.magic import register_cell_magic
 
 
@@ -16,6 +18,46 @@ def modify_and_import(module_name, package, modification_func):
     exec(codeobj, module.__dict__)
     sys.modules[module_name] = module
     return module
+
+
+help_message = (
+    "Apply a patch to module MODULE.\n"
+    "If only START_LINE is provided lines in the cell will be inserted before it.\n"
+    "If END_LINE is also provided original lines upto (but not including) it will be deleted.\n"
+    "After usage, do `import MODULE` or `from MODULE import ...` to use the patched module.\n"
+)
+
+
+class PatchArgs(NamedTuple):
+    module: str
+    start_line: int
+    end_line: int | None
+
+
+def parse_args(line: str) -> PatchArgs:
+    """Parse arguments from line.
+
+    This returns the parsed arguments or throws SystemExit if parsing fails."""
+    parser = argparse.ArgumentParser(prog="%%patch_import", description=help_message)
+    parser.add_argument("module", help="Module name to patch", metavar="MODULE")
+    parser.add_argument(
+        "start_line",
+        type=int,
+        help="Starting line number",
+        metavar="START_LINE",
+    )
+    parser.add_argument(
+        "end_line",
+        nargs="?",
+        type=int,
+        help="Ending line number (optional)",
+        metavar="END_LINE",
+    )
+
+    args = parser.parse_known_args(shlex.split(line))
+    return PatchArgs(
+        module=args.module, start_line=args.start_line, end_line=args.end_line
+    )
 
 
 def patchimport(line, cell):
@@ -38,41 +80,10 @@ def patchimport(line, cell):
     # Start deleting code at line 5, and stop before line 10
     # %
     """
-
-    help_message = (
-        "Apply a patch to module MODULE.\n"
-        "If only START_LINE is provided lines in the cell will be inserted before it.\n"
-        "If END_LINE is also provided original lines upto (but not including) it will be deleted.\n"
-        "After usage, do `import MODULE` or `from MODULE import ...` to use the patched module.\n"
-    )
-
-    # Parse arguments
-    parser = argparse.ArgumentParser(
-        prog="%%patch_import", description=help_message, exit_on_error=False
-    )
-    parser.add_argument("module", help="Module name to patch", metavar="MODULE")
-    parser.add_argument(
-        "start_line",
-        type=int,
-        help="Starting line number",
-        metavar="START_LINE",
-    )
-    parser.add_argument(
-        "end_line",
-        nargs="?",
-        type=int,
-        help="Ending line number (optional)",
-        metavar="END_LINE",
-    )
-
     try:
-        args = parser.parse_args(shlex.split(line))
+        module, start_line, end_line = parse_args(line)
     except SystemExit as e:
-        return  # User asked for help, so argparse tries to exit, but we stop that and simply return
-
-    module = args.module
-    start_line = args.start_line
-    end_line = args.end_line
+        return  # Parser bailed, but Jupyter would complain if it exited, so we return instead.
 
     # Validate arguments
     if start_line < 1:
