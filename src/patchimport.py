@@ -17,6 +17,7 @@ def modify_and_import(module_name, package, modification_func):
     sys.modules[module_name] = module
     return module
 
+
 def patchimport(line, cell):
     """
     A cell magic to apply a patch before importing a module.
@@ -125,6 +126,7 @@ def patchimport(line, cell):
         None,
         partial(patcher, start_line=start_line - 1, end_line=end_line - 1, patch=cell),
     )
+
 
 def load_ipython_extension(ipython):
     register_cell_magic(patchimport)
