@@ -19,7 +19,6 @@ def modify_and_import(module_name, package, modification_func):
     codeobj = compile(new_source, f"<patched {module.__spec__.origin}>", "exec")
     exec(codeobj, module.__dict__)
     sys.modules[module_name] = module
-    breakpoint()
     return module
 
 
