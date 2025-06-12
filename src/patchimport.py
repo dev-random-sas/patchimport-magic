@@ -74,7 +74,7 @@ def patcher(source, start_line, end_line, patch, log_function=print):
         # For logging line numbers get incremented by 1 to match what users see in editors.
         modified_end = start_line + len(patch_lines)
         preview_lines = [
-            f"{i+1:3} {new_lines[i]}" for i in range(start_line - 3, start_line)
+            f"{i+1:3} {new_lines[i]}" for i in range(max(start_line - 3,0), start_line)
         ]
         preview_lines += [
             f"{i+1:3}+{new_lines[i]}" for i in range(start_line, modified_end)
