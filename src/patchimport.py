@@ -13,10 +13,13 @@ def modify_and_import(module_name, package, modification_func):
     spec = util.find_spec(module_name, package)
     source = spec.loader.get_source(module_name)
     new_source = modification_func(source)
+    spec.origin = None
+    spec.cached = None
     module = util.module_from_spec(spec)
-    codeobj = compile(new_source, module.__spec__.origin, "exec")
+    codeobj = compile(new_source, f"<patched {module.__spec__.origin}>", "exec")
     exec(codeobj, module.__dict__)
     sys.modules[module_name] = module
+    breakpoint()
     return module
 
 
@@ -59,6 +62,38 @@ def parse_args(line: str) -> PatchArgs:
         module=args.module, start_line=args.start_line, end_line=args.end_line
     )
 
+def patcher(source, start_line, end_line, patch, log_function=print):
+    lines = source.splitlines()
+    patch_lines = patch.splitlines()
+    new_lines = [*(lines[:start_line]), *patch_lines, *(lines[end_line:])]
+    new_src = "\n".join(new_lines)
+
+    if callable(log_function):
+        # For logging line numbers get incremented by 1 to match what users see in editors.
+        modified_end = start_line + len(patch_lines)
+        preview_lines = [
+            f"{i+1:3} {new_lines[i]}" for i in range(start_line - 3, start_line)
+        ]
+        preview_lines += [
+            f"{i+1:3}+{new_lines[i]}" for i in range(start_line, modified_end)
+        ]
+        if (
+            end_line <= modified_end
+        ):  # We inserted at least what we deleted, so we print from new_lines
+            preview_lines += [
+                f"{i+1:3} {new_lines[i]}" for i in range(modified_end, modified_end + 3)
+            ]
+        else:  # We deleted more than we inserted, so we print from original lines
+            preview_lines += [
+                f"{i+1:3}-{lines[i]}" for i in range(modified_end, end_line)
+            ]
+            preview_lines += [
+                f"{i+1:3} {lines[i]}" for i in range(end_line, end_line + 3)
+            ]
+        log_function(f"Patch applied from line {start_line+1} to {end_line+1}:\n")
+        log_function("\n".join(preview_lines))
+
+    return new_src
 
 def patchimport(line, cell):
     """
@@ -98,45 +133,15 @@ def patchimport(line, cell):
         # If end_line not provided, default to start_line (insert without deleting)
         end_line = start_line
 
-    def patcher(source, start_line, end_line, patch):
-        lines = source.splitlines()
-        patch_lines = patch.splitlines()
-        new_lines = [*(lines[:start_line]), *patch_lines, *(lines[end_line:])]
-        new_src = "\n".join(new_lines)
-
-        modified_end = start_line + len(patch_lines)
-        preview_lines = [
-            f"{i+1:3} {new_lines[i]}" for i in range(start_line - 3, start_line)
-        ]
-        preview_lines += [
-            f"{i+1:3}+{new_lines[i]}" for i in range(start_line, modified_end)
-        ]
-        if (
-            end_line <= modified_end
-        ):  # We inserted at least more than we deleted, so we print from new_lines
-            preview_lines += [
-                f"{i+1:3} {new_lines[i]}" for i in range(modified_end, modified_end + 3)
-            ]
-        else:  # We deleted more than we inserted, so we print from original lines
-            preview_lines += [
-                f"{i+1:3}-{lines[i]}" for i in range(modified_end, end_line)
-            ]
-            preview_lines += [
-                f"{i+1:3} {lines[i]}" for i in range(end_line, end_line + 3)
-            ]
-        print(
-            f"REMEMBER TO DO `import {module}` OR `from {module} import ...` AFTER THIS MAGIC CALL!"
-        )
-        print(f"Patch applied from line {start_line+1} to {end_line+1}:\n")
-        print("\n".join(preview_lines))
-
-        return new_src
-
     modify_and_import(
         module,
         None,
-        partial(patcher, start_line=start_line - 1, end_line=end_line - 1, patch=cell),
+        partial(patcher, start_line=start_line - 1, end_line=end_line - 1, patch=cell, log_function=print),
     )
+    print(
+        f"REMEMBER TO DO `import {module}` OR `from {module} import ...` AFTER THIS MAGIC CALL!"
+    )
+    return
 
 
 def load_ipython_extension(ipython):
