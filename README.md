@@ -2,7 +2,7 @@
 
 IPython magic to patch modules before you import them.
 
-`patchimport-magic` provides a cell magic (`%%patchimport`) that allows you to apply quick, in-memory patches to any installed Python module directly from a Jupyter Notebook or IPython session. This is incredibly useful for rapid debugging, experimenting with library internals without forking, or testing a potential fix on the fly.
+`patchimport-magic` provides a cell magic (`%%patchimport`) that allows you to apply quick, in-memory patches to any installed Python module directly from a Jupyter Notebook or IPython session. This is incredibly useful for rapid debugging, performance profiling, experimenting with library internals without forking, or testing a potential fix on the fly.
 
 ---
 
@@ -10,6 +10,7 @@ IPython magic to patch modules before you import them.
 
 Have you ever wanted to:
 
+- **Quickly A/B test a function's performance** with `%%timeit`?
 - **Add a `print` statement** inside a third-party library function to see what's going on?
 - **Test a one-line fix** for a bug without cloning and reinstalling the entire package?
 - **Experiment with a function's behavior** by temporarily changing its source code?
@@ -45,19 +46,7 @@ After running the magic cell, you **must import the module in a new cell** for t
 
 ### Example 1: Inserting Code
 
-Let's add a `print` statement to the standard library's `abc.py` module. The original source for the `ABC` class (around line 99) looks like this:
-
-```python
-# ...
-class ABC(type):
-    """Helper class that provides a standard way to create an ABC.
-    ...
-    """
-    def __new__(mcls, name, bases, namespace, /, **kwargs):
-# ...
-```
-
-We can insert a new attribute right before the class definition using the magic. Note that line numbers start at 1.
+Let's add a `print` statement to the standard library's `abc.py` module. We can insert a new attribute right before the class definition (around line 99).
 
 ```python
 # %%
@@ -72,42 +61,13 @@ import abc
 print(abc.data)
 ```
 
-**Output:**
-
-```
-Patch applied from line 99 to 99:
-
-  96
-  97 # A new abstract base class may be created by deriving from ABC.
-  98 #
-  99+data = 'SURPRISE!!!'
- 100 class ABC(type):
- 101     """Helper class that provides a standard way to create an ABC.
- 102
-
-REMEMBER TO DO `import abc` OR `from abc import ...` AFTER THIS MAGIC CALL!
-
-SURPRISE!!!
-```
-
 ### Example 2: Replacing Code
 
-Now, let's modify the behavior of `random.choice()`. The original function simply returns a random element. We'll patch it to always return the _first_ element of a sequence.
-
-The source for `random.choice` is around lines 376-378 in `random.py`:
-
-```python
-# original random.py
-def choice(self, seq):
-    """Choose a random element from a non-empty sequence."""
-    return seq[self._randbelow(len(seq))]
-```
-
-We will replace the function body (line 378) with our own code. To do this, we specify a start and end line. The replacement will occur from `start_line` up to (but not including) `end_line`.
+Let's modify the behavior of `random.choice()`. We can patch it to always return the _first_ element of a sequence by replacing its original implementation.
 
 ```python
 # %%
-# Replace lines 378 through 378 (i.e., just line 378)
+# Replace lines 378 through 378 (i.e., just line 378 in random.py)
 %%patchimport random 378 379
         return seq[0] # Always return the first element!
 
@@ -116,27 +76,77 @@ import random
 
 my_list = ['apple', 'banana', 'cherry']
 print(f"Patched random.choice: {random.choice(my_list)}")
-print(f"Patched random.choice: {random.choice(my_list)}")
 ```
 
-**Output:**
+### Example 3: A/B Performance Testing with `%%timeit`
+
+This is where `patchimport-magic` really shines. Imagine you have written a utility module and suspect one of its functions is slow. You can quickly test an alternative implementation without changing the file.
+
+**Scenario:** Let's say you have this file, `my_utility_module.py`:
+
+```python
+# my_utility_module.py
+def find_common_elements(list1, list2):
+    """Finds common elements using a slow, nested loop approach."""
+    common = []
+    for item in list1:
+        if item in list2: # O(n) lookup for lists is slow!
+            common.append(item)
+    return common
+```
+
+Now, in your notebook, first time the original, slow version.
+
+```python
+# In your Notebook:
+
+# 1. Create some data
+import my_utility_module
+
+data = list(range(1000))
+sample_to_find = list(range(500, 1500))
+
+# 2. Time the original implementation
+print("Timing original (list-based) implementation:")
+%timeit my_utility_module.find_common_elements(data, sample_to_find)
+```
+
+You hypothesize that converting `list2` to a `set` for O(1) lookups will be much faster. Let's patch it and find out\!
+
+```python
+# 3. Patch the function with a faster implementation
+# We will replace the body of the function (lines 3 to 7)
+# Note: The end line in the magic (8) is exclusive.
+%%patchimport my_utility_module 3 8
+    # A much faster implementation using a set for O(1) lookups.
+    set2 = set(list2)
+    return [item for item in list1 if item in set2]
+
+# 4. Re-import and time the new version
+import my_utility_module # This re-import loads the patched version
+
+print("\nTiming patched (set-based) implementation:")
+%timeit my_utility_module.find_common_elements(data, sample_to_find)
+```
+
+**Expected Output:**
+
+You will see a dramatic performance improvement, proving your hypothesis in seconds.
 
 ```
-Patch applied from line 378 to 379:
+Timing original (list-based) implementation:
+11.5 ms ± 123 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
 
- 375     # It is not part of the public API and may be removed at any time.
- 376
- 377     def choice(self, seq):
- 378+        return seq[0] # Always return the first element!
- 379         """Choose a random element from a non-empty sequence."""
- 380         try:
- 381             i = self._randbelow(len(seq))
+Patch applied from line 3 to 8:
+...
 
-REMEMBER TO DO `import random` OR `from random import ...` AFTER THIS MAGIC CALL!
+REMEMBER TO DO `import my_utility_module` OR `from my_utility_module import ...` AFTER THIS MAGIC CALL!
 
-Patched random.choice: apple
-Patched random.choice: apple
+Timing patched (set-based) implementation:
+33.1 µs ± 0.2 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)
 ```
+
+This workflow allows for incredibly fast, iterative performance tuning without ever leaving your notebook.
 
 ---
 
