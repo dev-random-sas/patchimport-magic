@@ -54,7 +54,7 @@ def parse_args(line: str) -> PatchArgs:
         metavar="END_LINE",
     )
 
-    args = parser.parse_known_args(shlex.split(line))
+    args, _ = parser.parse_known_args(shlex.split(line))
     return PatchArgs(
         module=args.module, start_line=args.start_line, end_line=args.end_line
     )
