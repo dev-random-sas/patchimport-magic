@@ -3,7 +3,7 @@ from importlib import util
 from functools import partial
 import argparse
 import shlex
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from IPython.core.magic import register_cell_magic
 
@@ -31,7 +31,7 @@ help_message = (
 class PatchArgs(NamedTuple):
     module: str
     start_line: int
-    end_line: int | None
+    end_line: Optional[int]
 
 
 def parse_args(line: str) -> PatchArgs:
