@@ -1,9 +1,11 @@
 import sys
 import tempfile
 from pathlib import Path
+
+from patchimport import parse_args, patcher, patchimport
+
 import pytest
 
-from patchimport import patchimport, patcher, parse_args
 
 # --- Test Data: The dummy module we will be patching ---
 DUMMY_MODULE_CONTENT = """# This is LINE 1
@@ -16,6 +18,11 @@ class MyClass:
     def method(self):
         return "original method"
 """
+
+EXPECTED_HELP_MESSAGE = (
+    "REMEMBER TO DO `import dummy_module` OR "
+    "`from dummy_module import ...` AFTER THIS MAGIC CALL!"
+)
 
 
 @pytest.fixture
@@ -54,10 +61,7 @@ def test_code_insertion(dummy_module_path, capteesys):
     assert dummy_module.CONSTANT == "original"
     assert dummy_module.original_function() == "original result"
     out, _ = capteesys.readouterr()
-    assert (
-        "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!"
-        in out
-    )
+    assert EXPECTED_HELP_MESSAGE in out
 
 
 def test_code_append(dummy_module_path, capteesys):
@@ -74,10 +78,7 @@ def test_code_append(dummy_module_path, capteesys):
     assert dummy_module.CONSTANT == "original"
     assert dummy_module.original_function() == "original result"
     out, _ = capteesys.readouterr()
-    assert (
-        "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!"
-        in out
-    )
+    assert EXPECTED_HELP_MESSAGE in out
 
 
 def test_code_replacement(dummy_module_path, capteesys):
@@ -93,10 +94,7 @@ def test_code_replacement(dummy_module_path, capteesys):
     assert dummy_module.CONSTANT == "original"
     assert dummy_module.MyClass().method() == "original method"
     out, _ = capteesys.readouterr()
-    assert (
-        "REMEMBER TO DO `import dummy_module` OR `from dummy_module import ...` AFTER THIS MAGIC CALL!"
-        in out
-    )
+    assert EXPECTED_HELP_MESSAGE in out
 
 
 def test_parse_args():

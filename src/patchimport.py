@@ -1,8 +1,8 @@
-import sys
-from importlib import util
-from functools import partial
 import argparse
 import shlex
+import sys
+from functools import partial
+from importlib import util
 from typing import NamedTuple, Optional
 
 from IPython.core.magic import register_cell_magic
@@ -22,12 +22,11 @@ def modify_and_import(module_name, package, modification_func):
     return module
 
 
-help_message = (
-    "Apply a patch to module MODULE.\n"
-    "If only START_LINE is provided lines in the cell will be inserted before it.\n"
-    "If END_LINE is also provided original lines upto (but not including) it will be deleted.\n"
-    "After usage, do `import MODULE` or `from MODULE import ...` to use the patched module.\n"
-)
+help_message = """Apply a patch to module MODULE.
+If only START_LINE is provided lines in the cell will be inserted before it.
+If END_LINE is also provided original lines upto (but not including) it will be deleted.
+After usage, do `import MODULE` or `from MODULE import ...` to use the patched module.
+"""
 
 
 class PatchArgs(NamedTuple):
@@ -70,11 +69,11 @@ def patcher(source, start_line, end_line, patch, log_function=print):
     new_lines = [*(lines[:start_line]), *patch_lines, *(lines[end_line:])]
     new_src = "\n".join(new_lines)
 
+    # For logging line numbers get incremented by 1 to match what users see in editors.
     if callable(log_function):
-        # For logging line numbers get incremented by 1 to match what users see in editors.
         modified_end = start_line + len(patch_lines)
         preview_lines = [
-            f"{i+1:3} {new_lines[i]}" for i in range(max(start_line - 3,0), start_line)
+            f"{i+1:3} {new_lines[i]}" for i in range(max(start_line - 3, 0), start_line)
         ]
         preview_lines += [
             f"{i+1:3}+{new_lines[i]}" for i in range(start_line, modified_end)
@@ -125,8 +124,9 @@ def patchimport(line, cell):
     """
     try:
         module, start_line, end_line = parse_args(line)
-    except SystemExit as e:
-        return  # Parser bailed, but Jupyter would complain if it exited, so we return instead.
+    except SystemExit:
+        # Parser bailed, but Jupyter would complain if it exited, so we return instead.
+        return
 
     # Validate arguments
     if start_line < 1:
@@ -153,7 +153,9 @@ def patchimport(line, cell):
         ),
     )
     print(
-        f"REMEMBER TO DO `import {module}` OR `from {module} import ...` AFTER THIS MAGIC CALL!"
+        "REMEMBER TO DO "
+        f"`import {module}` OR `from {module} import ...` "
+        "AFTER THIS MAGIC CALL!"
     )
     return
 
