@@ -51,7 +51,7 @@ def test_code_insertion(dummy_module_path, capteesys):
     """
     Tests if `patchimport` can correctly insert code into a module.
     """
-    patch_code = "NEW_VARIABLE = 42"
+    patch_code = "NEW_VARIABLE = 42\n\n\n\n\n\n"
     patchimport(line="dummy_module 2", cell=patch_code)
 
     import dummy_module
@@ -60,6 +60,22 @@ def test_code_insertion(dummy_module_path, capteesys):
     assert dummy_module.NEW_VARIABLE == 42
     assert dummy_module.CONSTANT == "original"
     assert dummy_module.original_function() == "original result"
+    out, _ = capteesys.readouterr()
+    assert EXPECTED_HELP_MESSAGE in out
+
+
+def test_code_deletion(dummy_module_path, capteesys):
+    """
+    Tests if `patchimport` can correctly delete code from a module.
+    """
+    patch_code = "# Disabling original_function"
+    patchimport(line="dummy_module 3 7", cell=patch_code)
+
+    import dummy_module
+
+    assert not hasattr(dummy_module, "original_function")
+    assert hasattr(dummy_module, "MyClass")
+    assert dummy_module.CONSTANT == "original"
     out, _ = capteesys.readouterr()
     assert EXPECTED_HELP_MESSAGE in out
 
