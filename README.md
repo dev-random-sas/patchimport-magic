@@ -170,6 +170,50 @@ This magic uses Python's `importlib` library. It locates the source file for the
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome! Whether it's reporting a bug, suggesting an enhancement, or submitting a pull request, your help is appreciated.
+
+### Development Setup
+
+1.  Fork and clone the repository.
+2.  It is recommended to create a virtual environment:
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+3.  Install the project in editable mode along with its development dependencies:
+    ```bash
+    pip install -r requirements_dev.txt
+    ```
+
+### Running Tests & Linters
+
+This project uses `tox` to automate linting and testing across multiple Python versions. It ensures code quality and compatibility.
+
+To run the full suite of checks, simply execute:
+
+```bash
+tox
+```
+
+### Bug Reports & Feature Requests
+
+Please use the [GitHub Issues](https://github.com/dev-random-sas/patchimport-magic/issues) to report bugs or request new features. When reporting a bug, please include:
+
+- Your operating system and Python version.
+- A minimal, reproducible example demonstrating the issue.
+- The expected behavior and what actually happened.
+
+### Pull Requests
+
+1.  Create a new branch for your feature or bugfix.
+2.  Make your changes and add or update tests as appropriate.
+3.  Ensure all tests and lint checks pass by running `tox`.
+4.  Submit a pull request with a clear description of your changes.
+
+---
+
 ## 📄 License
 
 This project is licensed under the **BSD-3-Clause License**. See the `LICENSE` file for details.

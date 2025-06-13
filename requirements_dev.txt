@@ -1,0 +1,13 @@
+-e .
+
+tox
+pytest
+
+black
+
+flake8
+flake8-import-order
+flake8-black
+
+coverage
+pytest-cov
