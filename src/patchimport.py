@@ -5,7 +5,7 @@ from functools import partial
 from importlib import util
 from typing import NamedTuple, Optional
 
-from IPython.core.magic import register_cell_magic
+from IPython.core.magic import register_cell_magic, register_line_cell_magic
 
 
 # Source: https://stackoverflow.com/a/41863728/1460016
@@ -55,7 +55,7 @@ def parse_args(line: str) -> PatchArgs:
         metavar="END_LINE",
     )
 
-    args, _ = parser.parse_known_args(shlex.split(line))
+    args, _ = parser.parse_args(shlex.split(line))
     return PatchArgs(
         module=args.module, start_line=args.start_line, end_line=args.end_line
     )
@@ -107,18 +107,18 @@ def patchimport(line, cell):
     A cell magic to apply a patch before importing a module.
 
     Usage:
-    %%patch_import MODULE START_LINE [END_LINE]
+    %%patchimport MODULE START_LINE [END_LINE]
     code to be inserted/replaced
     many lines if needed
     # %
 
     Examples:
 
-    %%patch_import my_module 10
+    %%patchimport my_module 10
     breakpoint() # This will be inserted right before line 10
     # %
 
-    %%patch_import my_module 5 10
+    %%patchimport my_module 5 10
     # Start deleting code at line 5, and stop before line 10
     # %
     """
@@ -160,12 +160,53 @@ def patchimport(line, cell):
     return
 
 
+def unpatchimport(line, cell=None):
+    """
+    A cell magic to unapply patches previously applied by %%patch_import.
+
+    Usage:
+    %unpatchimport MODULE
+    # %
+
+    Examples:
+
+    %%patchimport my_module 10
+    breakpoint() # This will be inserted right before line 10
+    # %
+
+    %unpatchimport my_module
+    # % # No more breakpoint()
+    """
+    line = shlex.split(line)  # Get the module name from the line
+    if len(line) != 1:
+        print("Usage: %unpatchimport MODULE")
+        return
+    module = line[0]
+
+    modify_and_import(
+        module,
+        None,
+        lambda s: s,  # No changes, just re-import the original source
+    )
+    print(
+        "REMEMBER TO DO "
+        f"`import {module}` OR `from {module} import ...` "
+        "AFTER THIS MAGIC CALL!"
+    )
+    return
+
+
 # TODO: Add support for diffs
 
 
 def load_ipython_extension(ipython):
     # TODO: Should we require load_ext, or should we auto register ourselves?
     register_cell_magic(patchimport)
+    register_line_cell_magic(unpatchimport)
 
 
-__all__ = ["patchimport"]
+__all__ = [
+    "patchimport",
+    "unpatchimport",
+    "load_ipython_extension",
+]
