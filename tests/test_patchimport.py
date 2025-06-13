@@ -2,7 +2,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from patchimport import parse_args, patcher, patchimport
+from patchimport import parse_args, patcher, patchimport, unpatchimport
 
 import pytest
 
@@ -135,6 +135,22 @@ def test_patchimport_manytimes(dummy_module_path, capteesys):
     assert not hasattr(original, "NEW_VARIABLE")
     assert not hasattr(patched, "NEW_VARIABLE")
     assert repatched.NEW_VARIABLE == "added"
+
+
+def test_unpatchimport(dummy_module_path, capteesys):
+    """
+    Tests that `patchimport` does not modify previous imports of module,
+    and that on each patch it starts from the original state.
+    """
+    patch_code = 'CONSTANT = "replaced"'
+    patchimport(line="dummy_module 2 3", cell=patch_code)
+    import dummy_module as patched
+
+    unpatchimport(line="dummy_module")
+    import dummy_module as unpatched
+
+    assert patched.CONSTANT == "replaced"
+    assert unpatched.CONSTANT == "original"
 
 
 def test_parse_args():
