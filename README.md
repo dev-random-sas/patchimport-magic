@@ -1,5 +1,10 @@
 # patchimport-magic
 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/dev-random-sas/patchimport-magic/pypi.yml)](https://github.com/dev-random-sas/patchimport-magic)
+[![PyPI - Version](https://img.shields.io/pypi/v/patchimport-magic)](https://pypi.org/project/patchimport-magic)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/patchimport-magic)](https://pypistats.org/packages/patchimport-magic)
+![PyPI - License](https://img.shields.io/pypi/l/patchimport-magic)
+
 IPython magic to patch modules before you import them.
 
 `patchimport-magic` provides a cell magic (`%%patchimport`) that allows you to apply quick, in-memory patches to any installed Python module directly from a Jupyter Notebook or IPython session. This is incredibly useful for rapid debugging, performance profiling, experimenting with library internals without forking, or testing a potential fix on the fly.
