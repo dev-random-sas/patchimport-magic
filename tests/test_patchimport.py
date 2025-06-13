@@ -113,6 +113,30 @@ def test_code_replacement(dummy_module_path, capteesys):
     assert EXPECTED_HELP_MESSAGE in out
 
 
+def test_patchimport_manytimes(dummy_module_path, capteesys):
+    """
+    Tests that `patchimport` does not modify previous imports of module,
+    and that on each patch it starts from the original state.
+    """
+    import dummy_module as original
+
+    patch_code = 'CONSTANT = "replaced"'
+    patchimport(line="dummy_module 2 3", cell=patch_code)
+    import dummy_module as patched
+
+    patch_code = 'NEW_VARIABLE = "added"'
+    patchimport(line="dummy_module 3", cell=patch_code)
+    import dummy_module as repatched
+
+    assert original.CONSTANT == "original"
+    assert patched.CONSTANT == "replaced"
+    assert repatched.CONSTANT == "original"
+
+    assert not hasattr(original, "NEW_VARIABLE")
+    assert not hasattr(patched, "NEW_VARIABLE")
+    assert repatched.NEW_VARIABLE == "added"
+
+
 def test_parse_args():
     """
     Tests the argument parsing logic.
