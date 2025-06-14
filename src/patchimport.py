@@ -5,8 +5,6 @@ from functools import partial
 from importlib import util
 from typing import NamedTuple, Optional
 
-from IPython.core.magic import register_cell_magic, register_line_cell_magic
-
 
 # Source: https://stackoverflow.com/a/41863728/1460016
 def modify_and_import(module_name, package, modification_func):
@@ -200,9 +198,12 @@ def unpatchimport(line, cell=None):
 
 
 def load_ipython_extension(ipython):
-    # TODO: Should we require load_ext, or should we auto register ourselves?
-    register_cell_magic(patchimport)
-    register_line_cell_magic(unpatchimport)
+    ipython.register_magic_function(
+        patchimport, magic_kind="cell", magic_name="patchimport"
+    )
+    ipython.register_magic_function(
+        unpatchimport, magic_kind="line_cell", magic_name="unpatchimport"
+    )
 
 
 __all__ = [
