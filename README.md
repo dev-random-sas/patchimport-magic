@@ -49,31 +49,19 @@ The magic command has two main forms:
 
 After running the magic cell, you **must import the module in a new cell** for the changes to take effect.
 
-### Example 1: Inserting Code
+You can also do `%unpatchimport <module_name>` to revert your patch.
 
-Let's add a `print` statement to the standard library's `abc.py` module. We can insert a new attribute right before the class definition (around line 99).
-
-```python
-# %%
-%%patchimport abc 99
-# This line will be inserted before line 99 of the original abc.py
-data = 'SURPRISE!!!'
-
-# %%
-# Now, import the patched module and access the new data
-import abc
-
-print(abc.data)
-```
-
-### Example 2: Replacing Code
+### Example 1: Replacing Code
 
 Let's modify the behavior of `random.choice()`. We can patch it to always return the _first_ element of a sequence by replacing its original implementation.
 
 ```python
 # %%
-# Replace lines 378 through 378 (i.e., just line 378 in random.py)
-%%patchimport random 378 379
+%load_ext patchimport
+!grep -n -A10 -e 'def choice(' /usr/lib/python3.9/random.py
+# We find out the return we want to replace is in line 346 and has 8 spaces indentation
+# %%
+%%patchimport random 346 347
         return seq[0] # Always return the first element!
 
 # %%
