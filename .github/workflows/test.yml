@@ -1,0 +1,23 @@
+name: Run Tests 🧪
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests 🧪
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install tox
+        run: python3 -m pip install tox
+      - name: Run tests with tox
+        run: tox 
