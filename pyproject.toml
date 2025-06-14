@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "patchimport-magic"
-version = "0.2.0"
+version = "0.3.0"
 authors = [{ name="Luigi Finetti", email="luigi@finetti.com.ar" }]
 readme = "README.md"
 license = "BSD-3-Clause"
